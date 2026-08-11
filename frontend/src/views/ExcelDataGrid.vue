@@ -34,7 +34,7 @@
         <div v-if="loading" class="py-20 text-center font-medium text-sm bg-white/5 rounded-2xl border border-white/10 text-slate-400">
           <div class="flex flex-col items-center gap-4">
             <div class="w-10 h-10 border-2 border-[#4edea3]/30 border-t-[#4edea3] rounded-full animate-spin"></div>
-            <span>Cargando registros en AG-Grid...</span>
+            <span>Cargando registros...</span>
           </div>
         </div>
 

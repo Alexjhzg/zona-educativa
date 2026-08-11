@@ -144,6 +144,7 @@
                 <thead>
                   <tr :class="isDark ? 'border-white/10 text-slate-400 bg-[#122131]/60' : 'border-slate-200 text-slate-500 bg-slate-50'" class="border-b text-[11px] font-extrabold uppercase tracking-wider">
                     <th class="p-4 font-bold">Código DEA / Plantel</th>
+                    <th class="p-4 font-bold">Municipio</th>
                     <th class="p-4 font-bold">Solicitante</th>
                     <th class="p-4 font-bold">Tipo Solicitud</th>
                     <th class="p-4 font-bold">Estatus</th>
@@ -155,7 +156,12 @@
                     <td class="p-4">
                       <div class="font-extrabold text-[#7bd0ff]">{{ sol.plantel?.codigo_dea || sol.codigo_dea || '#MON-' + sol.id }}</div>
                       <div :class="isDark ? 'text-white' : 'text-slate-900'" class="font-bold text-xs truncate max-w-[200px]">{{ sol.plantel?.plantel || sol.nombre_plantel || 'Plantel Educativo' }}</div>
-                      <div class="text-[10px] text-slate-400">{{ sol.plantel?.municipio || sol.municipio || 'MATURIN' }}</div>
+                    </td>
+                    <td class="p-4 font-bold" :class="isDark ? 'text-amber-300' : 'text-amber-800'">
+                      <div class="flex items-center gap-1">
+                        <MapPin class="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                        <span>{{ sol.plantel?.municipio_nombre || sol.municipio_nombre || sol.plantel?.municipio || 'MATURIN' }}</span>
+                      </div>
                     </td>
                     <td class="p-4">
                       <div :class="isDark ? 'text-white' : 'text-slate-900'" class="font-bold">{{ sol.solicitante_nombre || sol.nombre_solicitante || 'Solicitante' }}</div>

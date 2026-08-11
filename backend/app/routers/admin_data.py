@@ -180,6 +180,7 @@ def listar_tabla(
             data.append({
                 "id": s.id,
                 "plantel_id": s.plantel_id,
+                "municipio_nombre": s.plantel.municipio_nombre if s.plantel else "MATURIN",
                 "tipo_solicitud": s.tipo_solicitud or "",
                 "solicitante_rol": s.solicitante_rol or "",
                 "solicitante_nombre": s.solicitante_nombre or "",

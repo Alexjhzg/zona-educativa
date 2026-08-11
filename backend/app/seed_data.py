@@ -1,8 +1,17 @@
 import os
 import bcrypt
 import pandas as pd
-from database import engine, SessionLocal, Base
-from models import Municipio, Parroquia, Plantel, SolicitudQR, UsuarioAdmin
+from sqlalchemy import func
+try:
+    from .database import engine, SessionLocal, Base
+    from .models import Municipio, Parroquia, Plantel, SolicitudQR, UsuarioAdmin
+except (ImportError, ModuleNotFoundError):
+    try:
+        from database import engine, SessionLocal, Base
+        from models import Municipio, Parroquia, Plantel, SolicitudQR, UsuarioAdmin
+    except (ImportError, ModuleNotFoundError):
+        from app.database import engine, SessionLocal, Base
+        from app.models import Municipio, Parroquia, Plantel, SolicitudQR, UsuarioAdmin
 
 def hash_password(password: str) -> str:
     pwd_bytes = password.encode('utf-8')
@@ -59,30 +68,43 @@ def seed_database(xlsm_path):
             parr_nom = clean_str(row.get('PARROQUIA')) or "SIN PARROQUIA"
             
             # Crear o buscar Municipio
-            if mun_nom not in municipios_map:
-                mun_obj = db.query(Municipio).filter(Municipio.nombre == mun_nom).first()
+            mun_nom_clean = mun_nom.upper().strip()
+            if mun_nom_clean not in municipios_map:
+                mun_obj = db.query(Municipio).filter(func.upper(Municipio.nombre) == mun_nom_clean).first()
                 if not mun_obj:
-                    mun_obj = Municipio(nombre=mun_nom)
-                    db.add(mun_obj)
-                    db.commit()
-                    db.refresh(mun_obj)
-                municipios_map[mun_nom] = mun_obj
-            mun_obj = municipios_map[mun_nom]
+                    try:
+                        mun_obj = Municipio(nombre=mun_nom_clean)
+                        db.add(mun_obj)
+                        db.commit()
+                        db.refresh(mun_obj)
+                    except Exception:
+                        db.rollback()
+                        mun_obj = db.query(Municipio).filter(func.upper(Municipio.nombre) == mun_nom_clean).first()
+                municipios_map[mun_nom_clean] = mun_obj.id
+            mun_id = municipios_map[mun_nom_clean]
             
             # Crear o buscar Parroquia
-            parr_key = f"{mun_nom}_{parr_nom}"
+            parr_nom_clean = parr_nom.upper().strip()
+            parr_key = f"{mun_id}_{parr_nom_clean}"
             if parr_key not in parroquias_map:
                 parr_obj = db.query(Parroquia).filter(
-                    Parroquia.municipio_id == mun_obj.id,
-                    Parroquia.nombre == parr_nom
+                    Parroquia.municipio_id == mun_id,
+                    func.upper(Parroquia.nombre) == parr_nom_clean
                 ).first()
                 if not parr_obj:
-                    parr_obj = Parroquia(municipio_id=mun_obj.id, nombre=parr_nom)
-                    db.add(parr_obj)
-                    db.commit()
-                    db.refresh(parr_obj)
-                parroquias_map[parr_key] = parr_obj
-            parr_obj = parroquias_map[parr_key]
+                    try:
+                        parr_obj = Parroquia(municipio_id=mun_id, nombre=parr_nom_clean)
+                        db.add(parr_obj)
+                        db.commit()
+                        db.refresh(parr_obj)
+                    except Exception:
+                        db.rollback()
+                        parr_obj = db.query(Parroquia).filter(
+                            Parroquia.municipio_id == mun_id,
+                            func.upper(Parroquia.nombre) == parr_nom_clean
+                        ).first()
+                parroquias_map[parr_key] = parr_obj.id
+            parr_id = parroquias_map[parr_key]
             
             # Limpieza del código DEA / Plantel
             codigo_dea = clean_str(row.get('CODIGO PLANTEL')) or f"DEA_GEN_{idx+1}"
@@ -113,18 +135,17 @@ def seed_database(xlsm_path):
                 estatus_qr=clean_str(row.get('ESTATUS QR')) or "SIN QR ASIGNADO",
                 qr_segen=clean_str(row.get('QR SEGEN')),
                 qr_director=clean_str(row.get('QR DIRECTOR')),
-                municipio_id=mun_obj.id,
-                parroquia_id=parr_obj.id,
-                municipio_nombre=mun_nom,
-                parroquia_nombre=parr_nom,
+                municipio_id=mun_id,
+                parroquia_id=parr_id,
+                municipio_nombre=mun_nom_clean,
+                parroquia_nombre=parr_nom_clean,
                 latitud=lat_float,
                 longitud=long_float
             )
-            planteles_to_insert.append(plantel_obj)
-        
-        db.bulk_save_objects(planteles_to_insert)
+            db.add(plantel_obj)
+
         db.commit()
-        print(f"✅ Se insertaron exitosamente {len(planteles_to_insert)} planteles educativos.")
+        print(f"✅ Se insertaron exitosamente {len(df)} planteles educativos.")
 
     # Crear Usuario Admin inicial si no existe
     admin_user = db.query(UsuarioAdmin).filter(UsuarioAdmin.username == "admin").first()

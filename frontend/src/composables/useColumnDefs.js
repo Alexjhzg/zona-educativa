@@ -96,6 +96,7 @@ export function useColumnDefs(activeTable) {
     } else if (currentTable === 'solicitudes_qr') {
       return [
         { field: 'id', headerName: 'ID', width: 70, editable: false, flex: 0 },
+        { field: 'municipio_nombre', headerName: 'Municipio', filter: true, width: 140 },
         { field: 'solicitante_nombre', headerName: 'Solicitante', filter: true },
         { field: 'solicitante_ci', headerName: 'Cédula', filter: true },
         {
