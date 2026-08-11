@@ -256,6 +256,7 @@ onUnmounted(() => {
 async function switchTable(tableName) {
   activeTable.value = tableName
   searchQuery.value = ''
+  Object.keys(newRowForm).forEach(k => delete newRowForm[k])
   await loadTableData()
 }
 

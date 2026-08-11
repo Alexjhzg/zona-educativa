@@ -23,6 +23,12 @@ export function useGridData(activeTable) {
   // Carga de datos de la tabla activa
   async function loadTableData() {
     loading.value = true
+    rows.value = []
+    totalRows.value = 0
+    selectedRowsList.value = []
+    undoStack.value = []
+    redoStack.value = []
+
     try {
       const token = authStore.token || localStorage.getItem('admin_token')
       if (!token) {
@@ -35,7 +41,6 @@ export function useGridData(activeTable) {
       })
       rows.value = resp.data.items || []
       totalRows.value = resp.data.total || 0
-      selectedRowsList.value = []
     } catch (err) {
       console.error(err)
       if (err.response?.status === 401) {
