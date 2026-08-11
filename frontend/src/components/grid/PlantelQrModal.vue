@@ -212,6 +212,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import QrcodeVue from 'qrcode.vue'
+import QRCode from 'qrcode'
 import { X, MapPin, AlertCircle, Plus, ChevronLeft, ChevronRight, Download, Share2 } from 'lucide-vue-next'
 import { useTheme } from '../../composables/useTheme'
 import { useModalKeyboard } from '../../composables/useModalKeyboard'
@@ -357,30 +358,86 @@ const generarReporteQR = (qrItem) => {
 const compartirQR = async (qrItem) => {
   const plantelNombre = currentPlantel.value?.plantel || 'Plantel Educativo'
   const dea = currentPlantel.value?.codigo_dea || ''
-  const shareText = `🏫 *${plantelNombre}* (${dea})\n📌 Código QR (${qrItem.label}): ${qrItem.value}`
   
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: `Código QR - ${plantelNombre}`,
-        text: shareText,
-        url: window.location.href
-      })
-      toast.success('¡Código QR compartido!')
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        navigator.clipboard.writeText(shareText)
-        toast.info('Texto copiado al portapapeles para compartir.')
+  try {
+    const canvas = document.createElement('canvas')
+    canvas.width = 300
+    canvas.height = 360
+    const ctx = canvas.getContext('2d')
+
+    // Fondo blanco
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, 300, 360)
+
+    // Nombre del plantel
+    ctx.fillStyle = '#0f172a'
+    ctx.font = 'bold 14px Inter, Arial, sans-serif'
+    ctx.textAlign = 'center'
+    let nombre = `${plantelNombre} (${dea})`
+    while (ctx.measureText(nombre).width > 280 && nombre.length > 10) {
+      nombre = nombre.slice(0, -1)
+    }
+    ctx.fillText(nombre, 150, 25)
+
+    // QR Data
+    const qrDataUrl = await QRCode.toDataURL(qrItem.value, {
+      width: 250,
+      margin: 1,
+      errorCorrectionLevel: 'H'
+    })
+
+    const img = new Image()
+    img.src = qrDataUrl
+    await new Promise(res => { img.onload = res })
+    ctx.drawImage(img, 25, 40, 250, 250)
+
+    // Etiqueta y Valor
+    ctx.fillStyle = '#475569'
+    ctx.font = 'bold 12px Inter, Arial, sans-serif'
+    ctx.fillText(qrItem.label, 150, 310)
+
+    ctx.fillStyle = '#0284c7'
+    ctx.font = 'bold 11px monospace'
+    ctx.fillText(qrItem.value, 150, 335)
+
+    // Convertir canvas a Blob y crear File object
+    canvas.toBlob(async (blob) => {
+      if (!blob) return
+      const filename = `QR_${qrItem.key}_${dea || 'plantel'}.png`
+      const imageFile = new File([blob], filename, { type: 'image/png' })
+
+      if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+        try {
+          await navigator.share({
+            files: [imageFile],
+            title: `Código QR ${qrItem.label}`,
+            text: `Código QR de ${plantelNombre}`
+          })
+          toast.success('¡Imagen del Código QR compartida!')
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            descargarBlob(blob, filename)
+          }
+        }
+      } else {
+        descargarBlob(blob, filename)
       }
-    }
-  } else {
-    try {
-      await navigator.clipboard.writeText(shareText)
-      toast.success('¡Datos del QR copiados al portapapeles para compartir!')
-    } catch (err) {
-      toast.error('No se pudo copiar al portapapeles.')
-    }
+    }, 'image/png')
+
+  } catch (err) {
+    console.error(err)
+    toast.error('Error al generar la imagen del QR para compartir')
   }
+}
+
+const descargarBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+  toast.info('Imagen descargada para compartir.')
 }
 
 const saveCustomQrCode = () => {
