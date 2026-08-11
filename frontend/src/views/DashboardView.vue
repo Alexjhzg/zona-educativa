@@ -67,17 +67,17 @@
           </div>
           <div class="flex items-baseline gap-2 mb-3">
             <h3 :class="isDark ? 'text-white' : 'text-slate-900'" class="text-4xl font-black font-mono">
-              {{ ((kpisData.total_qr_segen / (kpisData.total_planteles || 1)) * 100).toFixed(0) }}<span class="text-xl text-[#4edea3]">%</span>
+              {{ (kpisData.total_planteles && kpisData.total_qr_segen ? ((kpisData.total_qr_segen / kpisData.total_planteles) * 100).toFixed(0) : 0) }}<span class="text-xl text-[#4edea3]">%</span>
             </h3>
           </div>
           <div :class="isDark ? 'bg-[#1c2b3c]' : 'bg-slate-100'" class="w-full rounded-full h-2 mt-2">
             <div 
               class="bg-[#4edea3] h-2 rounded-full transition-all duration-700 shadow-xs" 
-              :style="{ width: ((kpisData.total_qr_segen / (kpisData.total_planteles || 1)) * 100) + '%' }"
+              :style="{ width: (kpisData.total_planteles && kpisData.total_qr_segen ? ((kpisData.total_qr_segen / kpisData.total_planteles) * 100) : 0) + '%' }"
             ></div>
           </div>
           <p :class="isDark ? 'text-slate-400' : 'text-slate-500'" class="text-[11px] mt-2.5 text-right font-medium">
-            {{ kpisData.total_qr_segen }} de {{ kpisData.total_planteles }} planteles
+            {{ kpisData.total_qr_segen || 0 }} de {{ kpisData.total_planteles || 0 }} planteles
           </p>
         </div>
 
@@ -254,10 +254,14 @@ const searchQuery = ref('')
 
 const kpisData = computed(() => {
   return dashboardStore.kpis || {
-    total_planteles: 988,
-    total_qr_segen: 801,
-    total_sin_qr: 187,
-    total_reponer_qr: 12
+    total_planteles: 0,
+    total_qr_segen: 0,
+    total_sin_qr: 0,
+    total_reponer_qr: 0,
+    total_nacional: 0,
+    total_estadal: 0,
+    total_privada: 0,
+    total_solicitudes_registradas: 0
   }
 })
 
@@ -268,10 +272,10 @@ const filteredSolicitudes = computed(() => {
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim()
     list = list.filter(s => 
-      (s.codigo_dea && s.codigo_dea.toLowerCase().includes(q)) ||
-      (s.nombre_plantel && s.nombre_plantel.toLowerCase().includes(q)) ||
-      (s.nombre_solicitante && s.nombre_solicitante.toLowerCase().includes(q)) ||
-      (s.cedula_solicitante && s.cedula_solicitante.toLowerCase().includes(q))
+      (s.plantel?.codigo_dea && s.plantel.codigo_dea.toLowerCase().includes(q)) ||
+      (s.plantel?.plantel && s.plantel.plantel.toLowerCase().includes(q)) ||
+      (s.solicitante_nombre && s.solicitante_nombre.toLowerCase().includes(q)) ||
+      (s.solicitante_ci && s.solicitante_ci.toLowerCase().includes(q))
     )
   }
   return list
@@ -280,8 +284,11 @@ const filteredSolicitudes = computed(() => {
 async function loadData() {
   loading.value = true
   try {
+    const token = authStore.token || localStorage.getItem('admin_token')
     await dashboardStore.fetchDashboardKPIs()
-    const resp = await axios.get('/api/solicitudes')
+    const resp = await axios.get('/api/dashboard/solicitudes', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     solicitudes.value = resp.data || []
   } catch (err) {
     console.error('Error cargando datos del dashboard:', err)
