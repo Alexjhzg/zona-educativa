@@ -106,16 +106,27 @@
                 {{ qrItem.label }}
               </span>
               <!-- Botón descargar PNG de este QR individual -->
-              <button
-                @click="generarReporteQR(qrItem)"
-                :disabled="generandoReporte"
-                class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all disabled:opacity-40 disabled:cursor-wait"
-                :class="isDark ? 'bg-white/5 hover:bg-blue-500/20 text-slate-400 hover:text-blue-300 border border-white/10' : 'bg-slate-100 hover:bg-blue-100 text-slate-400 hover:text-blue-700 border border-slate-200'"
-                title="Descargar PNG"
-              >
-                <Download class="w-3 h-3 shrink-0" />
-                <span>PNG</span>
-              </button>
+              <div class="flex items-center gap-1">
+                <button
+                  @click="compartirQR(qrItem)"
+                  class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all"
+                  :class="isDark ? 'bg-white/5 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-300 border border-white/10' : 'bg-slate-100 hover:bg-emerald-100 text-slate-400 hover:text-emerald-700 border border-slate-200'"
+                  title="Compartir Código QR"
+                >
+                  <Share2 class="w-3 h-3 shrink-0" />
+                  <span>Compartir</span>
+                </button>
+                <button
+                  @click="generarReporteQR(qrItem)"
+                  :disabled="generandoReporte"
+                  class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all disabled:opacity-40 disabled:cursor-wait"
+                  :class="isDark ? 'bg-white/5 hover:bg-blue-500/20 text-slate-400 hover:text-blue-300 border border-white/10' : 'bg-slate-100 hover:bg-blue-100 text-slate-400 hover:text-blue-700 border border-slate-200'"
+                  title="Descargar PNG"
+                >
+                  <Download class="w-3 h-3 shrink-0" />
+                  <span>PNG</span>
+                </button>
+              </div>
             </div>
 
             <div class="p-3 bg-white rounded-2xl shadow-md border border-slate-200 mb-3 inline-block group-hover:scale-105 transition-transform">
@@ -201,7 +212,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import QrcodeVue from 'qrcode.vue'
-import { X, MapPin, AlertCircle, Plus, ChevronLeft, ChevronRight, Download } from 'lucide-vue-next'
+import { X, MapPin, AlertCircle, Plus, ChevronLeft, ChevronRight, Download, Share2 } from 'lucide-vue-next'
 import { useTheme } from '../../composables/useTheme'
 import { useModalKeyboard } from '../../composables/useModalKeyboard'
 import { useQrReport } from '../../composables/useQrReport'
@@ -341,6 +352,35 @@ const activeQrCodesList = computed(() => {
 
 const generarReporteQR = (qrItem) => {
   generarReporteQRFn(qrItem, currentPlantel)
+}
+
+const compartirQR = async (qrItem) => {
+  const plantelNombre = currentPlantel.value?.plantel || 'Plantel Educativo'
+  const dea = currentPlantel.value?.codigo_dea || ''
+  const shareText = `🏫 *${plantelNombre}* (${dea})\n📌 Código QR (${qrItem.label}): ${qrItem.value}`
+  
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: `Código QR - ${plantelNombre}`,
+        text: shareText,
+        url: window.location.href
+      })
+      toast.success('¡Código QR compartido!')
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        navigator.clipboard.writeText(shareText)
+        toast.info('Texto copiado al portapapeles para compartir.')
+      }
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareText)
+      toast.success('¡Datos del QR copiados al portapapeles para compartir!')
+    } catch (err) {
+      toast.error('No se pudo copiar al portapapeles.')
+    }
+  }
 }
 
 const saveCustomQrCode = () => {
