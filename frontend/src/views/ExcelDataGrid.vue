@@ -56,6 +56,7 @@
         v-if="showAddModal"
         :active-table="activeTable"
         :columns="modalColumns"
+        :planteles-list="rows"
         v-model:new-row-form="newRowForm"
         :saving-new-row="savingNewRow"
         @close="showAddModal = false"
