@@ -57,13 +57,18 @@
 
           <!-- Menú desplegable de coincidencias -->
           <div 
-            v-if="showDropdown && filteredPlanteles.length > 0"
+            v-if="showDropdown && (combinedPlanteles.length > 0 || searchingApi)"
             :class="isDark ? 'bg-[#0b1726] border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-xl'"
             class="absolute left-0 right-0 top-full mt-2 rounded-2xl border max-h-56 overflow-y-auto z-50 divide-y divide-white/5 shadow-2xl"
           >
+            <div v-if="searchingApi" class="p-3 text-center text-xs text-slate-400 font-medium flex items-center justify-center gap-2">
+              <Loader2 class="w-4 h-4 animate-spin text-[#4edea3]" />
+              <span>Buscando en la base de datos de planteles...</span>
+            </div>
             <button
-              v-for="p in filteredPlanteles"
-              :key="p.id"
+              v-else
+              v-for="p in combinedPlanteles"
+              :key="p.id || p.codigo_dea"
               type="button"
               @click="selectPlantel(p)"
               :class="isDark ? 'hover:bg-white/10' : 'hover:bg-slate-50'"
@@ -143,6 +148,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { Plus, X, Search, Loader2 } from 'lucide-vue-next'
 import { useTheme } from '../../composables/useTheme'
+import { usePlantelesStore } from '../../stores/planteles'
 
 const props = defineProps({
   activeTable: String,
@@ -158,10 +164,13 @@ const props = defineProps({
 const emit = defineEmits(['close', 'save-new-row', 'update:newRowForm'])
 
 const { isDark } = useTheme()
+const plantelesStore = usePlantelesStore()
 
 const searchTerm = ref('')
 const showDropdown = ref(false)
 const selectedPlantel = ref(null)
+const searchingApi = ref(false)
+const apiSearchResults = ref([])
 
 // Objeto reactivo local para forzar actualización instantánea de la UI
 const localFormData = reactive({})
@@ -175,6 +184,23 @@ watch(() => props.newRowForm, (newVal) => {
   }
 }, { immediate: true, deep: true })
 
+// Búsqueda asíncrona reactiva al escribir
+watch(searchTerm, async (newQuery) => {
+  if (!newQuery || newQuery.length < 2) {
+    apiSearchResults.value = []
+    return
+  }
+  searchingApi.value = true
+  try {
+    await plantelesStore.buscarPlanteles(newQuery)
+    apiSearchResults.value = plantelesStore.searchResults || []
+  } catch (err) {
+    console.error('Error en búsqueda asíncrona:', err)
+  } finally {
+    searchingApi.value = false
+  }
+})
+
 const activeTableLabel = computed(() => {
   if (props.activeTable === 'planteles') return 'Planteles Educativos'
   if (props.activeTable === 'solicitudes_qr') return 'Solicitudes de QR'
@@ -182,14 +208,22 @@ const activeTableLabel = computed(() => {
   return props.activeTable || 'Tabla'
 })
 
-const filteredPlanteles = computed(() => {
+const combinedPlanteles = computed(() => {
   if (!searchTerm.value.trim()) return []
   const q = searchTerm.value.toLowerCase().trim()
-  return (props.plantelesList || []).filter(p => 
+  
+  // Combinar resultados locales + resultados de la API global
+  const localMatches = (props.plantelesList || []).filter(p => 
     (p.plantel && p.plantel.toLowerCase().includes(q)) ||
     (p.codigo_dea && p.codigo_dea.toLowerCase().includes(q)) ||
     (p.municipio_nombre && p.municipio_nombre.toLowerCase().includes(q))
-  ).slice(0, 8)
+  )
+
+  const map = new Map()
+  localMatches.forEach(p => map.set(p.id || p.codigo_dea, p))
+  apiSearchResults.value.forEach(p => map.set(p.id || p.codigo_dea, p))
+
+  return Array.from(map.values()).slice(0, 10)
 })
 
 function selectPlantel(p) {
