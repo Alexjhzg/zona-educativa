@@ -90,8 +90,8 @@
             
             <select
               v-if="col.type === 'select'"
-              :value="newRowForm[col.key]"
-              @change="updateField(col.key, $event.target.value)"
+              v-model="localFormData[col.key]"
+              @change="onLocalFieldChange(col.key)"
               :class="isDark ? 'bg-[#0d1c2d] border-white/10 text-white focus:border-[#4edea3]' : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-blue-900'"
               class="w-full px-3.5 py-2.5 border rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 transition-all"
               required
@@ -102,8 +102,8 @@
 
             <input
               v-else
-              :value="newRowForm[col.key]"
-              @input="updateField(col.key, $event.target.value)"
+              v-model="localFormData[col.key]"
+              @input="onLocalFieldChange(col.key)"
               type="text"
               :placeholder="'Ingrese ' + col.label.toLowerCase()"
               :class="isDark ? 'bg-[#0d1c2d] border-white/10 text-white placeholder-slate-500 focus:border-[#4edea3]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-blue-900'"
@@ -140,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { Plus, X, Search, Loader2 } from 'lucide-vue-next'
 import { useTheme } from '../../composables/useTheme'
 
@@ -162,6 +162,18 @@ const { isDark } = useTheme()
 const searchTerm = ref('')
 const showDropdown = ref(false)
 const selectedPlantel = ref(null)
+
+// Objeto reactivo local para forzar actualización instantánea de la UI
+const localFormData = reactive({})
+
+// Sincronizar localFormData con props.newRowForm al abrir o cambiar
+watch(() => props.newRowForm, (newVal) => {
+  if (newVal) {
+    Object.keys(newVal).forEach(k => {
+      localFormData[k] = newVal[k]
+    })
+  }
+}, { immediate: true, deep: true })
 
 const activeTableLabel = computed(() => {
   if (props.activeTable === 'planteles') return 'Planteles Educativos'
@@ -188,47 +200,35 @@ function selectPlantel(p) {
   const updatedForm = { ...props.newRowForm }
 
   // Mapeo automático inteligente de campos si existen en la tabla activa
-  if ('codigo_dea' in updatedForm || props.columns.some(c => c.key === 'codigo_dea')) {
-    updatedForm.codigo_dea = p.codigo_dea || ''
-  }
-  if ('plantel' in updatedForm || props.columns.some(c => c.key === 'plantel')) {
-    updatedForm.plantel = p.plantel || ''
-  }
-  if ('municipio_nombre' in updatedForm || props.columns.some(c => c.key === 'municipio_nombre')) {
-    updatedForm.municipio_nombre = p.municipio_nombre || p.municipio || 'MATURIN'
-  }
-  if ('parroquia_nombre' in updatedForm || props.columns.some(c => c.key === 'parroquia_nombre')) {
-    updatedForm.parroquia_nombre = p.parroquia_nombre || p.parroquia || ''
-  }
-  if ('dependencia' in updatedForm || props.columns.some(c => c.key === 'dependencia')) {
-    updatedForm.dependencia = p.dependencia || 'NACIONAL'
-  }
-  if ('nombres_contacto' in updatedForm || props.columns.some(c => c.key === 'nombres_contacto')) {
-    updatedForm.nombres_contacto = p.nombres_contacto || ''
-  }
-  if ('ci_contacto' in updatedForm || props.columns.some(c => c.key === 'ci_contacto')) {
-    updatedForm.ci_contacto = p.ci_contacto || ''
-  }
-  if ('telefono_contacto' in updatedForm || props.columns.some(c => c.key === 'telefono_contacto')) {
-    updatedForm.telefono_contacto = p.telefono_contacto || ''
-  }
-  if ('email_contacto' in updatedForm || props.columns.some(c => c.key === 'email_contacto')) {
-    updatedForm.email_contacto = p.email_contacto || ''
-  }
-  if ('estatus_qr' in updatedForm || props.columns.some(c => c.key === 'estatus_qr')) {
-    updatedForm.estatus_qr = p.estatus_qr || 'SIN QR ASIGNADO'
-  }
-  if ('plantel_id' in updatedForm || props.columns.some(c => c.key === 'plantel_id')) {
-    updatedForm.plantel_id = p.id
-  }
+  updatedForm.codigo_dea = p.codigo_dea || ''
+  updatedForm.plantel = p.plantel || ''
+  updatedForm.municipio_nombre = p.municipio_nombre || p.municipio || 'MATURIN'
+  updatedForm.parroquia_nombre = p.parroquia_nombre || p.parroquia || ''
+  updatedForm.dependencia = p.dependencia || 'NACIONAL'
+  updatedForm.nombres_contacto = p.nombres_contacto || ''
+  updatedForm.ci_contacto = p.ci_contacto || ''
+  updatedForm.telefono_contacto = p.telefono_contacto || ''
+  updatedForm.email_contacto = p.email_contacto || ''
+  updatedForm.estatus_qr = p.estatus_qr || 'SIN QR ASIGNADO'
+  updatedForm.solicitante_nombre = p.nombres_contacto || ''
+  updatedForm.solicitante_ci = p.ci_contacto || ''
+  updatedForm.solicitante_telefono = p.telefono_contacto || ''
+  updatedForm.solicitante_email = p.email_contacto || ''
+  updatedForm.plantel_id = p.id
+
+  // Actualizar objeto local e informarle al padre
+  Object.keys(updatedForm).forEach(k => {
+    localFormData[k] = updatedForm[k]
+  })
 
   emit('update:newRowForm', updatedForm)
 }
 
-function updateField(key, value) {
-  emit('update:newRowForm', {
+function onLocalFieldChange(key) {
+  const updated = {
     ...props.newRowForm,
-    [key]: value
-  })
+    [key]: localFormData[key]
+  }
+  emit('update:newRowForm', updated)
 }
 </script>
