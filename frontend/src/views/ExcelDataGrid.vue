@@ -105,6 +105,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useCatalogosStore } from '../stores/catalogos'
 import { useTheme } from '../composables/useTheme'
 import { useColumnDefs } from '../composables/useColumnDefs'
 import { useGridData } from '../composables/useGridData'
@@ -121,6 +122,7 @@ import GridDropzoneModal from '../components/grid/GridDropzoneModal.vue'
 import PlantelQrModal from '../components/grid/PlantelQrModal.vue'
 
 const authStore = useAuthStore()
+const catalogosStore = useCatalogosStore()
 const router = useRouter()
 
 // Estado del Modal de QR
@@ -236,6 +238,7 @@ function handleGlobalKeyDown(e) {
 
 // ==================== LIFECYCLE ====================
 onMounted(async () => {
+  catalogosStore.cargarCatalogos()
   await loadTableData()
   window.addEventListener('dragenter', handleWindowDragEnter)
   window.addEventListener('dragover', handleWindowDragOver)

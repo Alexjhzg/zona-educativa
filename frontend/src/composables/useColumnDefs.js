@@ -1,14 +1,9 @@
 import { computed } from 'vue'
-import {
-  MUNICIPIOS_MONAGAS,
-  DEPENDENCIAS,
-  ESTATUS_QR_LIST,
-  ROLES_LIST,
-  TIPO_SOLICITUD_LIST,
-  ESTATUS_SOLICITUD_LIST
-} from '../constants/gridOptions'
+import { useCatalogosStore } from '../stores/catalogos'
 
 export function useColumnDefs(activeTable) {
+  const catalogosStore = useCatalogosStore()
+
   const columnDefs = computed(() => {
     const currentTable = typeof activeTable === 'string' ? activeTable : activeTable.value
     if (currentTable === 'planteles') {
@@ -53,7 +48,7 @@ export function useColumnDefs(activeTable) {
           field: 'municipio_nombre',
           headerName: 'Municipio',
           cellEditor: 'agSelectCellEditor',
-          cellEditorParams: { values: MUNICIPIOS_MONAGAS },
+          cellEditorParams: { values: catalogosStore.municipios },
           filter: true
         },
         { field: 'parroquia_nombre', headerName: 'Parroquia', filter: true },
@@ -63,7 +58,7 @@ export function useColumnDefs(activeTable) {
           field: 'dependencia',
           headerName: 'Dependencia',
           cellEditor: 'agSelectCellEditor',
-          cellEditorParams: { values: DEPENDENCIAS },
+          cellEditorParams: { values: catalogosStore.dependencias },
           filter: true
         },
         { field: 'nombres_contacto', headerName: 'Contacto / Director', filter: true },
@@ -74,7 +69,7 @@ export function useColumnDefs(activeTable) {
           field: 'estatus_qr',
           headerName: 'Estatus QR',
           cellEditor: 'agSelectCellEditor',
-          cellEditorParams: { values: ESTATUS_QR_LIST },
+          cellEditorParams: { values: catalogosStore.estatusQrList },
           filter: true
         },
         { field: 'qr_segen', headerName: 'QR SEGEN', filter: true, width: 140 },
@@ -103,21 +98,21 @@ export function useColumnDefs(activeTable) {
           field: 'solicitante_rol',
           headerName: 'Rol Solicitante',
           cellEditor: 'agSelectCellEditor',
-          cellEditorParams: { values: ROLES_LIST },
+          cellEditorParams: { values: catalogosStore.rolesList },
           filter: true
         },
         {
           field: 'tipo_solicitud',
           headerName: 'Tipo Trámite',
           cellEditor: 'agSelectCellEditor',
-          cellEditorParams: { values: TIPO_SOLICITUD_LIST },
+          cellEditorParams: { values: catalogosStore.tiposSolicitudList },
           filter: true
         },
         {
           field: 'estatus_solicitud',
           headerName: 'Estatus',
           cellEditor: 'agSelectCellEditor',
-          cellEditorParams: { values: ESTATUS_SOLICITUD_LIST },
+          cellEditorParams: { values: catalogosStore.estatusSolicitudList },
           filter: true
         },
         { field: 'motivo', headerName: 'Observación / Motivo', filter: true }
@@ -129,7 +124,7 @@ export function useColumnDefs(activeTable) {
           field: 'nombre',
           headerName: 'Nombre del Municipio',
           cellEditor: 'agSelectCellEditor',
-          cellEditorParams: { values: MUNICIPIOS_MONAGAS },
+          cellEditorParams: { values: catalogosStore.municipios },
           filter: true
         }
       ]

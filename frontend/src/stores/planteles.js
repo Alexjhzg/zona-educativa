@@ -34,7 +34,6 @@ export const usePlantelesStore = defineStore('planteles', {
         this.selectedPlantel = response.data
         return response.data
       } catch (error) {
-        console.warn('DEA no encontrado:', error)
         return null
       } finally {
         this.loadingSearch = false

@@ -60,6 +60,7 @@
         :selected-plantel="selectedPlantel"
         :search-results="searchResults"
         :loading-search="loadingSearch"
+        :search-not-found="searchNotFound"
         :solicitante-rol="form.solicitante_rol"
         :show-director-update-form="showDirectorUpdateForm"
         v-model:nuevo-director="nuevoDirector"
@@ -114,6 +115,7 @@ const {
   submittedSuccess,
   activeSearchSource,
   showDirectorUpdateForm,
+  searchNotFound,
   nuevoDirector,
   form,
   searchResults,

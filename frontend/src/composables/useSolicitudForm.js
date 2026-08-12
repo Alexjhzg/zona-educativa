@@ -15,6 +15,7 @@ export function useSolicitudForm() {
   const submittedSuccess = ref(false)
   const activeSearchSource = ref('dea')
   const showDirectorUpdateForm = ref(false)
+  const searchNotFound = ref(false)
 
   const nuevoDirector = reactive({
     nombre: '',
@@ -38,7 +39,7 @@ export function useSolicitudForm() {
 
   function getStepTitle(step) {
     if (step === 1) return '¿Quién realiza la solicitud?'
-    if (step === 2) return 'Identificación y Búsqueda del Plantel'
+    if (step === 2) return 'Identificación del Plantel'
     if (step === 3) return 'Datos de Contacto del Solicitante'
     if (step === 4) return 'Detalles y Envío de la Solicitud'
     return ''
@@ -53,7 +54,7 @@ export function useSolicitudForm() {
       currentStep.value = 2
     } else if (currentStep.value === 2) {
       if (!selectedPlantel.value) {
-        toast.warning('Por favor busca y selecciona un plantel antes de continuar.')
+        toast.warning('Por favor ingresa un Código DEA o Cédula válida para continuar.')
         return
       }
       currentStep.value = 3
@@ -103,44 +104,73 @@ export function useSolicitudForm() {
     activeSearchSource.value = 'dea'
     ciInput.value = ''
     deaInput.value = cleanDeaInput(rawVal)
+    
+    selectedPlantel.value = null
+    showDirectorUpdateForm.value = false
+    searchNotFound.value = false
+
     clearTimeout(searchTimeout)
     const val = deaInput.value.trim()
-    if (!val) {
-      selectedPlantel.value = null
+    if (!val || val.length < 6) {
       plantelesStore.searchResults = []
       return
     }
 
     searchTimeout = setTimeout(async () => {
-      const exactMatch = await plantelesStore.buscarPorCodigoDEA(val)
-      if (exactMatch) {
-        handleSelectPlantel(exactMatch, 'dea')
-      } else {
-        plantelesStore.buscarPlanteles(val)
+      if (activeSearchSource.value !== 'dea' || deaInput.value.trim() !== val) {
+        return
       }
-    }, 250)
+
+      const exactMatch = await plantelesStore.buscarPorCodigoDEA(val)
+      if (activeSearchSource.value !== 'dea' || deaInput.value.trim() !== val) {
+        return
+      }
+
+      if (exactMatch && exactMatch.codigo_dea && exactMatch.codigo_dea.toUpperCase() === val.toUpperCase()) {
+        handleSelectPlantel(exactMatch, 'dea')
+        searchNotFound.value = false
+      } else {
+        selectedPlantel.value = null
+        searchNotFound.value = true
+      }
+    }, 450)
   }
 
   function handleCiInput(rawVal) {
     activeSearchSource.value = 'ci'
     deaInput.value = ''
     ciInput.value = cleanCiInput(rawVal)
+
+    selectedPlantel.value = null
+    showDirectorUpdateForm.value = false
+    searchNotFound.value = false
+
     clearTimeout(searchTimeout)
     const val = ciInput.value.trim()
-    if (!val) {
-      selectedPlantel.value = null
+    if (!val || val.length < 5) {
       plantelesStore.searchResults = []
       return
     }
 
     searchTimeout = setTimeout(async () => {
-      const exactMatch = await plantelesStore.buscarPorCodigoDEA(val)
-      if (exactMatch) {
-        handleSelectPlantel(exactMatch, 'ci')
-      } else {
-        plantelesStore.buscarPlanteles(val)
+      if (activeSearchSource.value !== 'ci' || ciInput.value.trim() !== val) {
+        return
       }
-    }, 250)
+
+      const exactMatch = await plantelesStore.buscarPorCodigoDEA(val)
+
+      if (activeSearchSource.value !== 'ci' || ciInput.value.trim() !== val) {
+        return
+      }
+
+      if (exactMatch && exactMatch.ci_contacto && cleanCiInput(exactMatch.ci_contacto) === cleanCiInput(val)) {
+        handleSelectPlantel(exactMatch, 'ci')
+        searchNotFound.value = false
+      } else {
+        selectedPlantel.value = null
+        searchNotFound.value = true
+      }
+    }, 450)
   }
 
   function autoFillDirectorData(item) {
@@ -161,6 +191,7 @@ export function useSolicitudForm() {
     }
     plantelesStore.searchResults = []
     showDirectorUpdateForm.value = false
+    searchNotFound.value = false
 
     if (form.solicitante_rol === 'DIRECTOR') {
       autoFillDirectorData(item)
@@ -173,7 +204,14 @@ export function useSolicitudForm() {
     ciInput.value = ''
     activeSearchSource.value = ''
     showDirectorUpdateForm.value = false
+    searchNotFound.value = false
     plantelesStore.searchResults = []
+    if (form.solicitante_rol === 'DIRECTOR') {
+      form.solicitante_nombre = ''
+      form.solicitante_ci = ''
+      form.solicitante_telefono = ''
+      form.solicitante_email = ''
+    }
   }
 
   function openDirectorUpdateForm() {
@@ -268,6 +306,7 @@ export function useSolicitudForm() {
     ciInput.value = ''
     activeSearchSource.value = ''
     showDirectorUpdateForm.value = false
+    searchNotFound.value = false
     nuevoDirector.nombre = ''
     nuevoDirector.ci = ''
     nuevoDirector.telefono = ''
@@ -289,6 +328,7 @@ export function useSolicitudForm() {
     submittedSuccess,
     activeSearchSource,
     showDirectorUpdateForm,
+    searchNotFound,
     nuevoDirector,
     form,
     searchResults,

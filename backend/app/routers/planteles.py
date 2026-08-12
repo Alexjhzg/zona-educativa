@@ -14,6 +14,18 @@ except ImportError:
 
 router = APIRouter(prefix="/api/planteles", tags=["Planteles Públicos"])
 
+@router.get("/municipios", response_model=List[str])
+def obtener_municipios_activos(db: Session = Depends(get_db)):
+    """
+    Retorna la lista única de municipios registrados en la base de datos, ordenados alfabéticamente.
+    """
+    results = db.query(Plantel.municipio_nombre).filter(
+        Plantel.municipio_nombre.isnot(None),
+        Plantel.municipio_nombre != ""
+    ).distinct().order_by(Plantel.municipio_nombre.asc()).all()
+    
+    return [row[0].strip().upper() for row in results if row[0]]
+
 def clean_ci_term(ci_str: str) -> str:
     """ Remueve V-, E-, puntos, guiones o decimales para comparar la cédula limpia """
     return ci_str.upper().replace("V-", "").replace("E-", "").replace(".", "").replace("-", "").replace(".0", "").strip()
@@ -60,12 +72,8 @@ def obtener_plantel_por_dea_o_cedula(query_key: str, db: Session = Depends(get_d
     if not plantel and ci_clean:
         plantel = db.query(Plantel).filter(
             (Plantel.ci_contacto.ilike(clean_key)) |
-            (Plantel.ci_contacto.ilike(f"%{ci_clean}%"))
+            (Plantel.ci_contacto == ci_clean)
         ).first()
-
-    # 3. Coincidencia parcial por DEA
-    if not plantel:
-        plantel = db.query(Plantel).filter(Plantel.codigo_dea.ilike(f"%{clean_key}%")).first()
     
     if not plantel:
         raise HTTPException(status_code=404, detail="Código DEA o Cédula no encontrada")

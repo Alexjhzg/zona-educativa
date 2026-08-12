@@ -5,13 +5,13 @@
         <div class="flex items-center space-x-2">
           <span class="w-6 h-6 rounded-full bg-blue-900 text-white font-extrabold text-xs flex items-center justify-center shadow-xs">2</span>
           <label class="block text-base font-extrabold text-slate-900">
-            Identificación y Búsqueda del Plantel <span class="text-red-500">*</span>
+            Identificación del Plantel <span class="text-red-500">*</span>
           </label>
         </div>
       </div>
-      <p class="text-xs text-slate-500 mb-4">Ingresa el Código DEA o la Cédula de Identidad en uno de los campos para autocompletar con navegación de teclado.</p>
+      <p class="text-xs text-slate-500 mb-4">Ingresa el Código DEA o Cédula de Identidad completa en uno de los campos para cargar los datos del plantel.</p>
 
-      <!-- Búsqueda Lado a Lado con Autocompletado Headless UI -->
+      <!-- Entrada de Búsqueda Lado a Lado -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         <div class="relative">
           <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex justify-between">
@@ -54,65 +54,6 @@
         </div>
       </div>
 
-      <!-- Indicador de Carga -->
-      <div v-if="loadingSearch" class="mt-2 text-xs text-blue-900 font-bold animate-pulse flex items-center space-x-1">
-        <svg class="animate-spin w-4 h-4 text-blue-900 mr-1" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-        <span>Buscando datos del plantel...</span>
-      </div>
-
-      <!-- Combobox Dropdown Headless UI con Selección por Teclado -->
-      <Combobox v-if="searchResults.length > 0 && !selectedPlantel" @update:modelValue="$emit('select-plantel', $event)" as="div" class="mt-2 relative z-50">
-        <ComboboxOptions static class="max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-2xl divide-y divide-slate-100 focus:outline-none">
-          <ComboboxOption
-            v-for="item in searchResults"
-            :key="item.id"
-            :value="item"
-            v-slot="{ active, selected }"
-            as="template"
-          >
-            <li
-              :class="[
-                'p-3.5 cursor-pointer transition flex justify-between items-center text-sm',
-                active ? 'bg-blue-900 text-white' : 'hover:bg-blue-50 text-slate-900'
-              ]"
-            >
-              <div>
-                <div class="flex items-center space-x-2">
-                  <span
-                    :class="active ? 'bg-white/20 text-white border-white/30' : 'bg-blue-50 text-blue-900 border-blue-100'"
-                    class="font-mono font-extrabold px-2 py-0.5 rounded text-xs border"
-                  >
-                    DEA: {{ item.codigo_dea }}
-                  </span>
-                  <span
-                    v-if="item.ci_contacto"
-                    :class="active ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-600'"
-                    class="font-mono font-bold px-2 py-0.5 rounded text-xs"
-                  >
-                    C.I: {{ formatCiDisplay(item.ci_contacto) }}
-                  </span>
-                </div>
-                <div class="font-bold mt-1" :class="active ? 'text-white' : 'text-slate-900'">{{ item.plantel }}</div>
-                <div class="text-xs mt-0.5" :class="active ? 'text-blue-100' : 'text-slate-500'">
-                  Director: <strong>{{ item.nombres_contacto || 'No registrado' }}</strong> | {{ item.municipio_nombre }}
-                </div>
-              </div>
-              <span
-                :class="[
-                  getEstatusBadgeClass(item.estatus_qr),
-                  active ? 'ring-1 ring-white/50' : ''
-                ]"
-                class="px-2.5 py-1 text-xs font-bold rounded-lg shrink-0 ml-2"
-              >
-                {{ item.estatus_qr }}
-              </span>
-            </li>
-          </ComboboxOption>
-        </ComboboxOptions>
-      </Combobox>
 
       <!-- Card de Plantel Verificado -->
       <div v-if="selectedPlantel" class="mt-4 bg-gradient-to-br from-blue-50/90 via-slate-50 to-indigo-50/80 border border-blue-200/80 rounded-2xl p-5 shadow-xs relative overflow-hidden animate-fade-in space-y-4">
@@ -134,7 +75,7 @@
               <div><span class="text-slate-500">Municipio:</span> <strong class="text-slate-900">{{ selectedPlantel.municipio_nombre }}</strong></div>
             </div>
           </div>
-          <button @click="$emit('clear-plantel')" type="button" class="bg-slate-200/80 hover:bg-red-100 hover:text-red-700 text-slate-700 font-bold p-1.5 rounded-lg text-xs transition shrink-0 ml-2 cursor-pointer">
+          <button @click="$emit('clear-plantel')" type="button" title="Borrar selección" class="bg-slate-200/80 hover:bg-red-100 hover:text-red-700 text-slate-700 font-bold p-1.5 rounded-lg text-xs transition shrink-0 ml-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
@@ -166,8 +107,14 @@
         </div>
       </div>
 
+      <!-- Mensaje si no fue encontrado -->
+      <div v-else-if="searchNotFound" class="mt-3 p-4 bg-amber-50 border border-amber-200/80 rounded-2xl text-center text-xs text-amber-800 font-medium animate-fade-in">
+        No se encontró ningún plantel registrado con el Código DEA o Cédula ingresada. Por favor verifica la información e intenta de nuevo.
+      </div>
+
+      <!-- Mensaje por Defecto -->
       <div v-else class="mt-3 p-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-xs text-slate-400 font-medium">
-        Ingresa el Código DEA o la Cédula en cualquiera de los dos campos superiores para buscar y seleccionar el plantel.
+        Ingresa el Código DEA o Cédula de Identidad completa en uno de los campos para traer los datos del plantel.
       </div>
     </div>
 
@@ -196,7 +143,6 @@
 </template>
 
 <script setup>
-import { Combobox, ComboboxOptions, ComboboxOption } from '@headlessui/vue'
 import SubFormDirectorUpdate from './SubFormDirectorUpdate.vue'
 
 defineProps({
@@ -206,6 +152,7 @@ defineProps({
   selectedPlantel: Object,
   searchResults: Array,
   loadingSearch: Boolean,
+  searchNotFound: Boolean,
   solicitanteRol: String,
   showDirectorUpdateForm: Boolean,
   nuevoDirector: Object
@@ -226,11 +173,5 @@ defineEmits([
 function formatCiDisplay(ciVal) {
   if (!ciVal) return ''
   return String(ciVal).replace('.0', '').trim()
-}
-
-function getEstatusBadgeClass(estatus) {
-  if (estatus === 'QR SEGEN') return 'bg-emerald-100 text-emerald-800'
-  if (estatus === 'REPONER QR') return 'bg-amber-100 text-amber-800'
-  return 'bg-slate-100 text-slate-700'
 }
 </script>

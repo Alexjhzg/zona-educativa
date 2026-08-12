@@ -149,6 +149,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import { Plus, X, Search, Loader2 } from 'lucide-vue-next'
 import { useTheme } from '../../composables/useTheme'
 import { usePlantelesStore } from '../../stores/planteles'
+import { useCatalogosStore } from '../../stores/catalogos'
 
 const props = defineProps({
   activeTable: String,
@@ -165,6 +166,7 @@ const emit = defineEmits(['close', 'save-new-row', 'update:newRowForm'])
 
 const { isDark } = useTheme()
 const plantelesStore = usePlantelesStore()
+const catalogosStore = useCatalogosStore()
 
 const searchTerm = ref('')
 const showDropdown = ref(false)
@@ -175,11 +177,26 @@ const apiSearchResults = ref([])
 // Objeto reactivo local para forzar actualización instantánea de la UI
 const localFormData = reactive({})
 
+function normalizeMunicipio(val) {
+  return catalogosStore.normalizeMunicipioName(val)
+}
+
 // Sincronizar localFormData con props.newRowForm al abrir o cambiar
-watch(() => props.newRowForm, (newVal) => {
-  if (newVal) {
-    Object.keys(newVal).forEach(k => {
-      localFormData[k] = newVal[k]
+watch(() => [props.newRowForm, props.columns], ([newForm, cols]) => {
+  if (cols && cols.length > 0) {
+    cols.forEach(c => {
+      if (!(c.key in localFormData)) {
+        localFormData[c.key] = ''
+      }
+    })
+  }
+  if (newForm) {
+    Object.keys(newForm).forEach(k => {
+      let v = newForm[k]
+      if (k === 'municipio_nombre' || k === 'municipio') {
+        v = normalizeMunicipio(v)
+      }
+      localFormData[k] = v
     })
   }
 }, { immediate: true, deep: true })
@@ -232,11 +249,14 @@ function selectPlantel(p) {
   showDropdown.value = false
 
   const updatedForm = { ...props.newRowForm }
+  const rawMun = p.municipio_nombre || p.municipio || ''
+  const normMunicipio = normalizeMunicipio(rawMun)
 
   // Mapeo automático inteligente de campos si existen en la tabla activa
   updatedForm.codigo_dea = p.codigo_dea || ''
   updatedForm.plantel = p.plantel || ''
-  updatedForm.municipio_nombre = p.municipio_nombre || p.municipio || 'MATURIN'
+  updatedForm.municipio_nombre = normMunicipio
+  updatedForm.municipio = normMunicipio
   updatedForm.parroquia_nombre = p.parroquia_nombre || p.parroquia || ''
   updatedForm.dependencia = p.dependencia || 'NACIONAL'
   updatedForm.nombres_contacto = p.nombres_contacto || ''
@@ -254,11 +274,16 @@ function selectPlantel(p) {
   Object.keys(updatedForm).forEach(k => {
     localFormData[k] = updatedForm[k]
   })
+  localFormData.municipio_nombre = normMunicipio
+  localFormData.municipio = normMunicipio
 
   emit('update:newRowForm', updatedForm)
 }
 
 function onLocalFieldChange(key) {
+  if (key === 'municipio_nombre' || key === 'municipio') {
+    localFormData[key] = normalizeMunicipio(localFormData[key])
+  }
   const updated = {
     ...props.newRowForm,
     [key]: localFormData[key]

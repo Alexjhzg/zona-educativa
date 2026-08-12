@@ -161,7 +161,7 @@ def listar_tabla(
         return {"total": total, "skip": skip, "limit": limit, "items": data}
 
     elif table_name == "solicitudes_qr":
-        query = db.query(SolicitudQR).options(joinedload(SolicitudQR.plantel))
+        query = db.query(SolicitudQR)
         if q:
             search_str = f"%{q}%"
             query = query.filter(
