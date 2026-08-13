@@ -126,9 +126,7 @@ graph TD
    ```
 
 5. **Abrir en el navegador:**
-   - 🌐 **Aplicación Frontend**: [http://localhost:8080](http://localhost:8080)
-   - ⚙️ **Documentación Interactiva API (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - 🏥 **Health Check API**: [http://localhost:8000/api/health](http://localhost:8000/api/health)
+   - 🌐 **Aplicación Web**: [http://localhost:8080](http://localhost:8080)
 
 ---
 
