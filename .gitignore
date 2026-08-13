@@ -19,6 +19,8 @@ dist/
 .vscode/
 .idea/
 .gemini/
+.agents/
+
 
 # Excel & Data Files (No subir a GitHub)
 *.xlsm
