@@ -20,7 +20,6 @@
 - [🛠️ Stack Tecnológico](#️-stack-tecnológico)
 - [🏗️ Arquitectura General](#️-arquitectura-general)
 - [🚀 Instalación y Despliegue Rápido (Docker)](#-instalación-y-despliegue-rápido-docker)
-- [🔑 Credenciales Demo](#-credenciales-demo)
 - [📚 Documentación Adicional](#-documentación-adicional)
 - [📄 Licencia](#-licencia)
 
@@ -125,20 +124,7 @@ graph TD
    docker-compose ps
    ```
 
-5. **Abrir en el navegador:**
-   - 🌐 **Aplicación Web**: [http://localhost:8080](http://localhost:8080)
 
----
-
-## 🔑 Credenciales Demo
-
-Para explorar la vista protegida del panel administrativo:
-
-- **URL Login**: `http://localhost:8080/admin/login`
-- **Usuario**: `admin`
-- **Contraseña**: `admin123`
-
----
 
 ## 📚 Documentación Adicional
 
