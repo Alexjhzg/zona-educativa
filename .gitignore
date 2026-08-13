@@ -19,3 +19,10 @@ dist/
 .vscode/
 .idea/
 .gemini/
+
+# Excel & Data Files (No subir a GitHub)
+*.xlsm
+*.xlsx
+*.xls
+*.csv
+
