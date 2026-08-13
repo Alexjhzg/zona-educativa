@@ -124,7 +124,7 @@ graph TD
    docker-compose ps
    ```
 
-
+---
 
 ## 📚 Documentación Adicional
 
