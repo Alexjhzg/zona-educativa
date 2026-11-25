@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+*.sqlite3
+*.db
+
+# Node / Frontend
+node_modules/
+dist/
+.ds_store
+.env
+.env.local
+
+# IDE / System
+.vscode/
+.idea/
+.gemini/
+.agents/
+
+
+# Excel, Backups & Data Files (No subir a GitHub)
+*.xlsm
+*.xlsx
+*.xls
+*.csv
+backend/backups/
+backups/
+
